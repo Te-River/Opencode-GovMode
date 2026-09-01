@@ -150,8 +150,8 @@ const plugin: OpenCodePlugin = {
         }
 
         // ---------- configure subagent depth for hierarchical delegation ----------
-        // Default: 1 (subagents cannot nest), set to 2+ for hierarchical government
-        const subagentDepth = options?.subagentDepth ?? 2
+        // Default: 9 for maximum fun! (0=disable, 1=default, 2-9=nested levels)
+        const subagentDepth = options?.subagentDepth ?? 9
         if (!cfg.subagent_depth) {
           cfg.subagent_depth = subagentDepth
         }

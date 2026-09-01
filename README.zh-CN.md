@@ -185,7 +185,7 @@ irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/ins
 | `ttlDays` | `number` | `5` | 黑板会话TTL（天） |
 | `defaultAgent` | `boolean` | `true` | 皇帝是否为默认代理 |
 | `maxDepth` | `number` | `10` | 最大层级嵌套深度 |
-| `subagentDepth` | `number` | `2` | OpenCode子代理嵌套深度（0=禁用，1=默认，2+=嵌套） |
+| `subagentDepth` | `number` | `9` | OpenCode子代理嵌套深度（0=禁用，1=默认，2-9=嵌套层级） |
 
 ### 子代理深度配置
 
@@ -194,21 +194,21 @@ irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/ins
 - **`0`** — 禁用所有子代理
 - **`1`** — 默认：子代理不能嵌套（仅单层）
 - **`2`** — 允许2层嵌套（皇帝 → 部门 → 基层官员）
-- **`3+`** — 更深层嵌套（不推荐，因为上下文/成本爆炸）
+- **`3-9`** — 深度嵌套，最大化混乱和乐趣！
 
-对于完整的帝国政府层级，插件默认设置`subagent_depth: 2`。你可以在`opencode.json`中覆盖此设置：
+插件默认设置`subagent_depth: 9`以获得最大的层级混乱。你可以在`opencode.json`中覆盖此设置：
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "subagent_depth": 2,
+  "subagent_depth": 9,
   "plugin": [
-    ["@te-river/opencode-gov-mode@latest", { "subagentDepth": 2 }]
+    ["@te-river/opencode-gov-mode@latest", { "subagentDepth": 9 }]
   ]
 }
 ```
 
-**警告：** 更高的值（3+）会导致指数级token消耗和成本增加。请谨慎使用。
+**警告：** 这仅用于娱乐目的。更高的值会导致指数级token消耗和成本增加。使用风险自负！
 
 ## 开发
 
