@@ -148,6 +148,13 @@ const plugin: OpenCodePlugin = {
         if (promote && (!cfg.default_agent || cfg.default_agent === "build")) {
           cfg.default_agent = "monarch"
         }
+
+        // ---------- configure subagent depth for hierarchical delegation ----------
+        // Default: 1 (subagents cannot nest), set to 2+ for hierarchical government
+        const subagentDepth = options?.subagentDepth ?? 2
+        if (!cfg.subagent_depth) {
+          cfg.subagent_depth = subagentDepth
+        }
       },
     }
   },

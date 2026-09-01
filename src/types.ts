@@ -42,6 +42,7 @@ export interface OpenCodeConfig {
   agent?: Record<string, AgentConfig>
   command?: Record<string, CommandConfig>
   default_agent?: string
+  subagent_depth?: number  // 0=disable, 1=default, 2+=nested
   [key: string]: unknown
 }
 
@@ -50,6 +51,7 @@ export interface PluginOptions {
   ttlDays?: number
   defaultAgent?: boolean
   maxDepth?: number
+  subagentDepth?: number  // OpenCode subagent_depth: 0=disable, 1=default, 2+=nested
   [key: string]: unknown
 }
 

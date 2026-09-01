@@ -187,6 +187,30 @@ The plugin reads configuration from your OpenCode Desktop settings. All options 
 | `ttlDays` | `number` | `5` | Blackboard session TTL in days |
 | `defaultAgent` | `boolean` | `true` | Whether Emperor is the default agent |
 | `maxDepth` | `number` | `10` | Maximum hierarchy nesting depth |
+| `subagentDepth` | `number` | `2` | OpenCode subagent nesting depth (0=disable, 1=default, 2+=nested) |
+
+### Subagent Depth Configuration
+
+The plugin automatically configures OpenCode's `subagent_depth` to enable hierarchical delegation:
+
+- **`0`** — Disable all subagents
+- **`1`** — Default: subagents cannot nest (single level only)
+- **`2`** — Allow 2 levels of nesting (Emperor → Ministry → Official)
+- **`3+`** — Deeper nesting (not recommended due to context/cost explosion)
+
+For the full imperial government hierarchy, the plugin sets `subagent_depth: 2` by default. You can override this in your `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "subagent_depth": 2,
+  "plugin": [
+    ["@te-river/opencode-gov-mode@latest", { "subagentDepth": 2 }]
+  ]
+}
+```
+
+**Warning:** Higher values (3+) cause exponential token consumption and cost. Use with caution.
 
 ## Development
 

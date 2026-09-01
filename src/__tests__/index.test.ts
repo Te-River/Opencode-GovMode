@@ -156,4 +156,25 @@ describe("config() hook", () => {
     ctx.config?.(cfg)
     assert.equal(cfg.command?.["gov-reign"]?.description, "user override")
   })
+
+  it("sets subagent_depth to 2 by default for hierarchical delegation", async () => {
+    const cfg: OpenCodeConfig = {}
+    const ctx = await plugin.server({ directory: process.cwd() })
+    ctx.config?.(cfg)
+    assert.equal(cfg.subagent_depth, 2)
+  })
+
+  it("does not override user-defined subagent_depth", async () => {
+    const cfg: OpenCodeConfig = { subagent_depth: 3 }
+    const ctx = await plugin.server({ directory: process.cwd() })
+    ctx.config?.(cfg)
+    assert.equal(cfg.subagent_depth, 3)
+  })
+
+  it("respects subagentDepth option", async () => {
+    const cfg: OpenCodeConfig = {}
+    const ctx = await plugin.server({ directory: process.cwd() }, { subagentDepth: 3 })
+    ctx.config?.(cfg)
+    assert.equal(cfg.subagent_depth, 3)
+  })
 })
