@@ -2,65 +2,71 @@
  * Opencode Gov Mode - Type Definitions
  * 
  * Hierarchical multi-agent system inspired by imperial government structure.
+ * Contract for the shipped 1.18.x loader.
  */
 
-/** Permission effect values supported by OpenCode v1.18.x */
-export type PermissionEffect = "allow" | "ask" | "deny"
+// ---------- v1 config shapes (what we mutate in the config hook) ----------
 
-/**
- * Bash permission — either a flat effect, or a granular object mapping
- * command patterns to individual effects (e.g. `{ "git log *": "allow", "rm *": "deny" }`).
- */
-export type BashPermission = PermissionEffect | Record<string, PermissionEffect>
+export interface AgentPermission {
+  [tool: string]: string | Record<string, string>
+}
 
-/** Agent configuration as defined in OpenCode config */
 export interface AgentConfig {
-  mode: "primary" | "subagent"
-  description: string
-  prompt: string
+  description?: string
+  mode?: "primary" | "subagent" | "all"
+  /** v1 config field for the system prompt (NOT `system`). */
+  prompt?: string
+  model?: string
   color?: string
-  permission?: {
-    edit?: PermissionEffect
-    bash?: BashPermission
-    webfetch?: PermissionEffect
-    task?: PermissionEffect
-    websearch?: PermissionEffect
-    external_directory?: PermissionEffect
-  }
-  disable?: boolean
+  hidden?: boolean
+  steps?: number
+  temperature?: number
+  permission?: AgentPermission
+  [key: string]: unknown
 }
 
-/** Command configuration as defined in OpenCode config */
 export interface CommandConfig {
-  description: string
-  agent: string
-  template: string
+  description?: string
+  template?: string
+  agent?: string
+  [key: string]: unknown
 }
 
-/** OpenCode config shape (v1.18.x) */
 export interface OpenCodeConfig {
   agent?: Record<string, AgentConfig>
   command?: Record<string, CommandConfig>
   default_agent?: string
-  subagent_depth?: number  // 0=disable, 1=default, 2+=nested
+  subagent_depth?: number
   [key: string]: unknown
 }
 
-/** Plugin options from tuple form */
-export interface PluginOptions {
-  ttlDays?: number
-  defaultAgent?: boolean
-  maxDepth?: number
-  subagentDepth?: number  // OpenCode subagent_depth: 0=disable, 1=default, 2+=nested
+// ---------- v1 hooks returned from server() ----------
+
+export interface Hooks {
+  config?: (cfg: OpenCodeConfig) => void | Promise<void>
+  [hook: string]: unknown
+}
+
+// ---------- input passed to server() ----------
+
+export interface PluginInput {
+  client: unknown
+  project: string
+  directory: string
+  worktree?: string
+  $?: unknown
+  serverUrl?: URL
   [key: string]: unknown
 }
 
-/** OpenCode plugin contract (v1.18.x) */
+// ---------- the hybrid plugin object the loader accepts ----------
+
 export interface OpenCodePlugin {
-  id: string
-  server: (input: { directory?: string }, options?: PluginOptions) => Promise<{
-    config?: (cfg: OpenCodeConfig) => void
-  }>
+  readonly id: string
+  readonly server: (
+    input: PluginInput,
+    options?: Record<string, unknown>,
+  ) => Promise<Hooks>
 }
 
 /** Hierarchy levels in the imperial system */

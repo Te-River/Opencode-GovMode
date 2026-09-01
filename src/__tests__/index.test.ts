@@ -8,7 +8,16 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
 import plugin from "../index.js"
-import type { OpenCodeConfig } from "../types.js"
+import type { OpenCodeConfig, PluginInput } from "../types.js"
+
+// Helper to create a valid PluginInput for testing
+function createTestInput(directory?: string): PluginInput {
+  return {
+    client: {},
+    project: "test-project",
+    directory: directory ?? process.cwd(),
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Plugin shape                                                      */
@@ -30,7 +39,7 @@ describe("config() hook", () => {
   async function getConfig(
     options: Record<string, unknown> = {}
   ): Promise<OpenCodeConfig> {
-    const ctx = await plugin.server({ directory: process.cwd() }, options as any)
+    const ctx = await plugin.server(createTestInput(), options)
     const cfg: OpenCodeConfig = {}
     ctx.config?.(cfg)
     return cfg
@@ -69,7 +78,7 @@ describe("config() hook", () => {
         },
       },
     }
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     // User's definition should be preserved
     assert.equal(cfg.agent?.["monarch"]?.description, "User-defined monarch override")
@@ -77,28 +86,28 @@ describe("config() hook", () => {
 
   it("promotes monarch to default_agent when no default is set", async () => {
     const cfg: OpenCodeConfig = {}
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.default_agent, "monarch")
   })
 
   it("promotes monarch when default_agent is 'build'", async () => {
     const cfg: OpenCodeConfig = { default_agent: "build" }
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.default_agent, "monarch")
   })
 
   it("does not override a non-build user default_agent", async () => {
     const cfg: OpenCodeConfig = { default_agent: "custom-agent" }
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.default_agent, "custom-agent")
   })
 
   it("does not promote monarch when defaultAgent option is false", async () => {
     const cfg: OpenCodeConfig = {}
-    const ctx = await plugin.server({ directory: process.cwd() }, { defaultAgent: false })
+    const ctx = await plugin.server(createTestInput(), { defaultAgent: false })
     ctx.config?.(cfg)
     assert.equal(cfg.default_agent, undefined)
   })
@@ -152,28 +161,28 @@ describe("config() hook", () => {
         "gov-reign": { description: "user override", agent: "custom", template: "custom" },
       },
     }
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.command?.["gov-reign"]?.description, "user override")
   })
 
   it("sets subagent_depth to 9 by default for maximum hierarchy fun", async () => {
     const cfg: OpenCodeConfig = {}
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.subagent_depth, 9)
   })
 
   it("does not override user-defined subagent_depth", async () => {
     const cfg: OpenCodeConfig = { subagent_depth: 3 }
-    const ctx = await plugin.server({ directory: process.cwd() })
+    const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     assert.equal(cfg.subagent_depth, 3)
   })
 
   it("respects subagentDepth option", async () => {
     const cfg: OpenCodeConfig = {}
-    const ctx = await plugin.server({ directory: process.cwd() }, { subagentDepth: 3 })
+    const ctx = await plugin.server(createTestInput(), { subagentDepth: 3 })
     ctx.config?.(cfg)
     assert.equal(cfg.subagent_depth, 3)
   })

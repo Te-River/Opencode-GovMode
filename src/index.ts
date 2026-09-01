@@ -23,7 +23,7 @@
  * - `maxDepth`     → maximum hierarchy nesting depth; default 10.
  */
 
-import type { OpenCodePlugin, OpenCodeConfig, PluginOptions } from "./types.js"
+import type { OpenCodePlugin, OpenCodeConfig, PluginInput, Hooks } from "./types.js"
 import { agents } from "./agents.js"
 import { commands } from "./commands.js"
 import {
@@ -108,7 +108,7 @@ function hierarchyNote(): string {
 const plugin: OpenCodePlugin = {
   id: "gov-mode",
 
-  server: async (input, options) => {
+  server: async (input: PluginInput, options?: Record<string, unknown>) => {
     // ---------- blackboard maintenance (code-level TTL sweeper) ----------
     const directory =
       typeof input?.directory === "string" && input.directory.length > 0
@@ -116,12 +116,12 @@ const plugin: OpenCodePlugin = {
         : process.cwd()
     const ttlMs = resolveTtlMs(options)
     const ttlDays = Math.round(ttlMs / (24 * 60 * 60 * 1000)) || DEFAULT_TTL_DAYS
-    const maxDepth = options?.maxDepth ?? 10
+    const maxDepth = (options?.maxDepth as number) ?? 10
     const boardRoot = startBlackboardMaintenance(directory, ttlMs)
     const note = blackboardNote(boardRoot, ttlDays, maxDepth)
     const hierarchy = hierarchyNote()
 
-    return {
+    const hooks: Hooks = {
       // ---------- v1 config hook: inject agents & commands ----------
       config(cfg: OpenCodeConfig) {
         if (!cfg.agent) cfg.agent = {}
@@ -151,12 +151,14 @@ const plugin: OpenCodePlugin = {
 
         // ---------- configure subagent depth for hierarchical delegation ----------
         // Default: 9 for maximum fun! (0=disable, 1=default, 2-9=nested levels)
-        const subagentDepth = options?.subagentDepth ?? 9
+        const subagentDepth = (options?.subagentDepth as number) ?? 9
         if (!cfg.subagent_depth) {
           cfg.subagent_depth = subagentDepth
         }
       },
     }
+    
+    return hooks
   },
 }
 
