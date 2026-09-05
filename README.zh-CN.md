@@ -36,6 +36,18 @@ curl -fsSL https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scri
 irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
 ```
 
+### 镜像站（中国大陆）
+
+如果访问 GitHub 有问题，可以尝试这些镜像：
+
+```bash
+# ghproxy.net
+curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
+
+# gh-proxy.com
+curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
+```
+
 ### 手动安装
 
 1. 克隆仓库：

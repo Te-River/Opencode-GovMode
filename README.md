@@ -36,6 +36,18 @@ curl -fsSL https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scri
 irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
 ```
 
+### Mirror Sites (China)
+
+If you have trouble accessing GitHub, try these mirrors:
+
+```bash
+# ghproxy.net
+curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
+
+# gh-proxy.com
+curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
+```
+
 ### Manual
 
 1. Clone the repository:
