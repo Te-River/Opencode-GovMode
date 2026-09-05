@@ -41,11 +41,19 @@ irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/ins
 If you have trouble accessing GitHub, try these mirrors:
 
 ```bash
-# ghproxy.net
+# macOS / Linux — ghproxy.net
 curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
 
-# gh-proxy.com
+# macOS / Linux — gh-proxy.com
 curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
+```
+
+```powershell
+# Windows — ghproxy.net
+irm https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
+
+# Windows — gh-proxy.com
+irm https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
 ```
 
 ### Manual
