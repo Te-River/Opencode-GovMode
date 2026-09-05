@@ -17,7 +17,7 @@ import {
   sweepStale,
   DEFAULT_TTL_MS,
   DEFAULT_TTL_DAYS,
-} from "../blackboard.js"
+} from "../src/blackboard.js"
 
 /* ------------------------------------------------------------------ */
 /*  resolveTtlMs                                                      */

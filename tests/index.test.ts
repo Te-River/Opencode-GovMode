@@ -7,8 +7,8 @@
 
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
-import plugin from "../index.js"
-import type { OpenCodeConfig, PluginInput } from "../types.js"
+import plugin from "../src/index.js"
+import type { OpenCodeConfig, PluginInput } from "../src/types.js"
 
 // Helper to create a valid PluginInput for testing
 function createTestInput(directory?: string): PluginInput {
@@ -115,28 +115,21 @@ describe("config() hook", () => {
   it("monarch prompt includes blackboard note", async () => {
     const cfg = await getConfig()
     const prompt = cfg.agent?.["monarch"]?.prompt ?? ""
-    assert.ok(prompt.includes("Imperial Government Blackboard"), "should mention blackboard")
+    assert.ok(prompt.includes("Gov Blackboard"), "should mention blackboard")
     assert.ok(prompt.includes("Root directory:"), "should include resolved root")
   })
 
-  it("monarch prompt includes hierarchy note", async () => {
-    const cfg = await getConfig()
-    const prompt = cfg.agent?.["monarch"]?.prompt ?? ""
-    assert.ok(prompt.includes("Imperial Hierarchy"), "should mention hierarchy")
-  })
-
-  it("prime-minister prompt includes both notes", async () => {
+  it("prime-minister prompt does NOT get blackboard note (only monarch does)", async () => {
     const cfg = await getConfig()
     const prompt = cfg.agent?.["prime-minister"]?.prompt ?? ""
-    assert.ok(prompt.includes("Imperial Government Blackboard"), "should mention blackboard")
-    assert.ok(prompt.includes("Imperial Hierarchy"), "should mention hierarchy")
+    assert.ok(!prompt.includes("Gov Blackboard"), "prime-minister should not have blackboard note")
   })
 
-  it("specialist agents do NOT get blackboard/hierarchy notes appended", async () => {
+  it("specialist agents do NOT get blackboard notes appended", async () => {
     const cfg = await getConfig()
-    // Architect should NOT have hierarchy note
+    // Architect should NOT have blackboard note
     const archPrompt = cfg.agent?.["architect"]?.prompt ?? ""
-    assert.ok(!archPrompt.includes("Imperial Hierarchy"), "architect should not have hierarchy note")
+    assert.ok(!archPrompt.includes("Gov Blackboard"), "architect should not have blackboard note")
   })
 
   it("injects all government commands", async () => {

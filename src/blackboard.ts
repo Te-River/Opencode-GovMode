@@ -1,8 +1,26 @@
 /**
- * Opencode Gov Mode - Blackboard System
- * 
- * Shared blackboard for hierarchical agent coordination with support
- * for deep nesting and imperial government structure.
+ * Shared blackboard for sub-agent coordination + automatic maintenance.
+ *
+ * Sub-agents cannot message each other live (platform limitation), so
+ * GovMode uses a file blackboard under
+ * `<repo>/.git/opencode-gov/<session-key>/<task>/`:
+ *  - <session-key> is a compact timestamp folder, one per conversation —
+ *    a fresh conversation can never collide with a not-yet-swept board
+ *    from an earlier one;
+ *  - each agent writes its full deliverable to a designated file;
+ *  - the team lead relays summaries + file paths in every dispatch;
+ *  - nobody deletes task directories by hand; the sweeper below reclaims
+ *    them once idle past the TTL (sole cleanup path, by design).
+ *
+ * This module is the code-level reclamation path, independent of the model:
+ * a sweeper removes task directories whose last activity is older than
+ * the TTL, at plugin startup and hourly in-process.  Placing the board
+ * inside `.git/` guarantees the user's working tree and commits are never
+ * polluted; for non-git workspaces we fall back to the OS temp dir.
+ *
+ * TTL is user-configurable via plugin options:
+ *   "plugin": [["@te-river/opencode-gov-mode", { "ttlDays": 7 }]]
+ * Default: 5 days.
  */
 
 import * as fs from "node:fs"
@@ -13,7 +31,7 @@ import * as path from "node:path"
 export const DEFAULT_TTL_DAYS = 5
 export const DEFAULT_TTL_MS = DEFAULT_TTL_DAYS * 24 * 60 * 60 * 1000
 
-/** In-process sweep interval. */
+/** In-process sweep cadence. */
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 /** Board root directory name (under .git/, or under tmpdir as fallback). */
@@ -50,118 +68,23 @@ export function resolveTtlMs(options: Record<string, unknown> = {}): number {
   return DEFAULT_TTL_MS
 }
 
-/* ------------------------------------------------------------------ */
-/*  Hierarchy-aware directory structure                               */
-/* ------------------------------------------------------------------ */
-
 /**
- * Create a hierarchical task directory structure.
- * 
- * Structure:
- * <root>/<session-key>/<task-slug>/
- *   ├── monarch/          # Emperor's work
- *   ├── prime-minister/   # Prime Minister's work
- *   ├── ministries/       # Six Ministries
- *   │   ├── personnel/
- *   │   ├── finance/
- *   │   ├── protocol/
- *   │   ├── military/
- *   │   ├── justice/
- *   │   └── engineering/
- *   ├── governors/        # Regional Governors
- *   │   └── <governor-id>/
- *   └── officials/        # Local Officials
- *       └── <official-id>/
+ * Latest mtime within `dir`, looking through up to `levels` sub-directory
+ * layers (artifacts live one level below a task dir, so 1 suffices per
+ * task and 2 from the session/root level).
  */
-export function createTaskStructure(
-  root: string,
-  sessionKey: string,
-  taskSlug: string
-): {
-  taskDir: string
-  monarchDir: string
-  primeMinisterDir: string
-  ministriesDir: string
-  governorsDir: string
-  officialsDir: string
-} {
-  const taskDir = path.join(root, sessionKey, taskSlug)
-  const monarchDir = path.join(taskDir, "monarch")
-  const primeMinisterDir = path.join(taskDir, "prime-minister")
-  const ministriesDir = path.join(taskDir, "ministries")
-  const governorsDir = path.join(taskDir, "governors")
-  const officialsDir = path.join(taskDir, "officials")
-
-  // Create all directories
-  for (const dir of [monarchDir, primeMinisterDir, ministriesDir, governorsDir, officialsDir]) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
-
-  // Create ministry subdirectories
-  const ministries = ["personnel", "finance", "protocol", "military", "justice", "engineering"]
-  for (const ministry of ministries) {
-    fs.mkdirSync(path.join(ministriesDir, ministry), { recursive: true })
-  }
-
-  return { taskDir, monarchDir, primeMinisterDir, ministriesDir, governorsDir, officialsDir }
-}
-
-/**
- * Get or create a ministry directory.
- */
-export function getMinistryDir(
-  ministriesDir: string,
-  ministry: string
-): string {
-  const dir = path.join(ministriesDir, ministry)
-  fs.mkdirSync(dir, { recursive: true })
-  return dir
-}
-
-/**
- * Get or create a governor directory.
- */
-export function getGovernorDir(
-  governorsDir: string,
-  governorId: string
-): string {
-  const dir = path.join(governorsDir, governorId)
-  fs.mkdirSync(dir, { recursive: true })
-  return dir
-}
-
-/**
- * Get or create an official directory.
- */
-export function getOfficialDir(
-  officialsDir: string,
-  officialId: string
-): string {
-  const dir = path.join(officialsDir, officialId)
-  fs.mkdirSync(dir, { recursive: true })
-  return dir
-}
-
-/* ------------------------------------------------------------------ */
-/*  TTL Sweeper (automatic cleanup)                                   */
-/* ------------------------------------------------------------------ */
-
-/** Latest mtime within `dir`, looking through `levels` sub-directory
- *  layers (artifacts live one level below a task dir, so 1 suffices per
- *  task and 2 from the session/root level). */
 function lastActivity(dir: string, levels = 0): number {
   try {
     let latest = fs.statSync(dir).mtimeMs
     for (const entry of fs.readdirSync(dir)) {
       try {
         const child = path.join(dir, entry)
+        const st = fs.statSync(child)
         const seen =
-          fs.statSync(child).isDirectory() && levels > 0
-            ? lastActivity(child, levels - 1)
-            : fs.statSync(child).mtimeMs
+          st.isDirectory() && levels > 0 ? lastActivity(child, levels - 1) : st.mtimeMs
         if (seen > latest) latest = seen
       } catch {
-        /* raced — ignore */
+        /* raced deletion — ignore */
       }
     }
     return latest
@@ -170,25 +93,28 @@ function lastActivity(dir: string, levels = 0): number {
   }
 }
 
-/** True when a directory tree shows no activity within the TTL. */
+/**
+ * True when a directory tree shows no activity within the TTL.
+ * `levels` must reach down to the artifact files: 1 for a task directory
+ * (files sit directly inside), 2 for a session directory (task dirs are
+ * one level deeper — depth 1 here would miss in-place rewrites and let a
+ * whole live session be reclaimed; regression-pinned by test fixture).
+ */
 function isStale(dir: string, now: number, ttlMs: number, levels: number): boolean {
   const seen = lastActivity(dir, levels)
   return seen !== 0 && now - seen > ttlMs
 }
 
 /**
- * Remove idle boards under `root`.  Understands two layouts:
- * 
- * - Session-partitioned `<root>/<session-key>/<task>/`: stale tasks are
- *   pruned individually under a still-live session; an entirely idle session
- *   folder goes as a whole.
- * 
- * - Legacy flat `<root>/<task>/`: unchanged semantics — and if such a dir
- *   unexpectedly contains sub-directories, idle ones are pruned by the same
- *   rule (hardest case, counted as task dirs).
- * 
+ * Remove idle boards under `root`.  Understands both layouts:
+ *  - session-partitioned `<root>/<session-key>/<task>/`: stale tasks are
+ *    pruned individually under a live session; an entirely idle session
+ *    folder goes as a whole;
+ *  - legacy flat `<root>/<task>/`: unchanged semantics — and if such a dir
+ *    unexpectedly contains sub-directories, idle ones are pruned by the
+ *    same rule (harmless hygiene, though counted as task dirs).
  * Returns the number of task directories reclaimed; a wholesale session
- * remove counts its task dirs (min 1, so a ghost empty stale session dir
+ * removal counts its task dirs (min 1, so a ghost empty stale session dir
  * also counts 1).  Never throws.
  */
 export function sweepStale(root: string, ttlMs = DEFAULT_TTL_MS): number {
@@ -196,7 +122,7 @@ export function sweepStale(root: string, ttlMs = DEFAULT_TTL_MS): number {
   try {
     entries = fs.readdirSync(root)
   } catch {
-    return 0 // root does not exist — nothing to sweep
+    return 0 // root does not exist yet — nothing to sweep
   }
   const now = Date.now()
   let removed = 0
@@ -205,36 +131,34 @@ export function sweepStale(root: string, ttlMs = DEFAULT_TTL_MS): number {
     try {
       if (!fs.statSync(dir).isDirectory()) continue
       if (isStale(dir, now, ttlMs, 2)) {
-        // Entire tree idle: prune per-task dirs, or a flat task dir.
+        // Entire tree idle: legacy flat task dir, or a finished session.
         let tasks = 0
         for (const child of fs.readdirSync(dir)) {
           try {
-            const task = path.join(dir, child)
-            if (fs.statSync(task).isDirectory()) tasks++
+            if (fs.statSync(path.join(dir, child)).isDirectory()) tasks++
           } catch {
-            /* raced — skip this task */
+            /* raced — ignore */
           }
         }
         fs.rmSync(dir, { recursive: true, force: true })
         removed += Math.max(1, tasks)
         continue
       }
-      // Live tree: prune per-task dirs (session layout; legacy flat dirs have
-      // no direct directory children, so this loop is a no-op for them).
+      // Live tree: prune per-task dirs (session layout; legacy dirs have
+      // no directory children, so this loop is a no-op for them).
       for (const child of fs.readdirSync(dir)) {
         const task = path.join(dir, child)
         try {
           if (!fs.statSync(task).isDirectory()) continue
-          if (isStale(task, now, ttlMs, 1)) {
-            fs.rmSync(task, { recursive: true, force: true })
-            removed++
-          }
+          if (!isStale(task, now, ttlMs, 1)) continue
+          fs.rmSync(task, { recursive: true, force: true })
+          removed++
         } catch {
           /* raced — skip this task */
         }
       }
     } catch {
-      /* stat / readdir failure on a single entry — skip it */
+      /* stat/race failure on a single entry — skip it */
     }
   }
   return removed
@@ -243,14 +167,10 @@ export function sweepStale(root: string, ttlMs = DEFAULT_TTL_MS): number {
 let maintenanceStarted = false
 
 /**
- * Start blackboard maintenance (idlewithin the process) and return
+ * Start blackboard maintenance (idempotent within the process) and return
  * the resolved board root.  Runs a startup sweep (catches leftovers from
- * crashes / force-kills) plus an ungard'd hourly interval so the timer
- * never keeps the process alive on its own.
- * 
- * Placing the board inside `.git/` guarantees the user's working tree
- * and commits are never polluted; for non-git workspaces we fall back
- * to the OS temp dir.
+ * crashes / force-kills) plus an unref'd hourly interval so the timer never
+ * keeps the process alive on its own.
  */
 export function startBlackboardMaintenance(
   directory: string,
