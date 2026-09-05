@@ -12,8 +12,7 @@
 
 $ErrorActionPreference = "Stop"
 
-# Package name
-$Package = "@te-river/opencode-gov-mode@latest"
+$Package = "@te-river/opencode-gov-mode"
 
 Write-Host ""
 Write-Host "🏛️  Opencode Gov Mode Installer" -ForegroundColor Blue
@@ -39,10 +38,24 @@ if ($majorVersion -lt 18) {
 
 Write-Host "✓ Node.js $nodeVersion detected" -ForegroundColor Green
 
-# Install the package globally
+# Query actual version from npm registry
 Write-Host ""
-Write-Host "📦 Installing $Package..." -ForegroundColor Yellow
-& npm install -g $Package
+Write-Host "🔍 Querying latest version from npm..." -ForegroundColor Yellow
+try {
+    $ActualVersion = npm view $Package version 2>$null
+    if ([string]::IsNullOrWhiteSpace($ActualVersion)) { throw "Empty version" }
+} catch {
+    Write-Host "❌ Failed to query version from npm registry" -ForegroundColor Red
+    exit 1
+}
+
+$Pinned = "$Package@$ActualVersion"
+Write-Host "✓ Latest version: $ActualVersion" -ForegroundColor Green
+
+# Install the package globally with pinned version
+Write-Host ""
+Write-Host "📦 Installing $Pinned..." -ForegroundColor Yellow
+& npm install -g $Pinned
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Failed to install package" -ForegroundColor Red
@@ -54,7 +67,6 @@ Write-Host "✓ Package installed successfully" -ForegroundColor Green
 # Find opencode config file
 $configFile = $null
 $userConfigDir = Join-Path $env:USERPROFILE ".config\opencode"
-$projectConfig = Get-Location
 
 # Check user config directory
 if (Test-Path (Join-Path $userConfigDir "opencode.jsonc")) {
@@ -75,14 +87,14 @@ if (-not $configFile) {
 # Create config if it doesn't exist
 if (-not $configFile) {
     Write-Host "📝 Creating opencode.jsonc in current directory..." -ForegroundColor Yellow
-    $configContent = @'
+    $configContent = @"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "`$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@te-river/opencode-gov-mode@latest"
+    "$Pinned"
   ]
 }
-'@
+"@
     Set-Content -Path "opencode.jsonc" -Value $configContent
     $configFile = "opencode.jsonc"
     Write-Host "✓ Created $configFile" -ForegroundColor Green
@@ -92,7 +104,11 @@ if (-not $configFile) {
     # Check if plugin is already configured
     $configContent = Get-Content -Path $configFile -Raw
     if ($configContent -match "@te-river/opencode-gov-mode") {
-        Write-Host "✓ Plugin already configured in $configFile" -ForegroundColor Green
+        Write-Host "📝 Updating plugin version to $ActualVersion..." -ForegroundColor Yellow
+        # Replace existing version with actual version
+        $configContent = $configContent -replace '@te-river/opencode-gov-mode@[^"\s]+', $Pinned
+        Set-Content -Path $configFile -Value $configContent
+        Write-Host "✓ Plugin version updated" -ForegroundColor Green
     } else {
         Write-Host "📝 Adding plugin to $configFile..." -ForegroundColor Yellow
         
@@ -102,20 +118,20 @@ if (-not $configFile) {
         # Add plugin to config
         if ($configFile -match '\.jsonc$') {
             # For JSONC files, insert before the closing brace
-            $configContent = $configContent -replace '\}', ', "plugin": ["@te-river/opencode-gov-mode@latest"]}'
+            $configContent = $configContent -replace '\}', ", `"plugin`": [`"$Pinned`"]`n}"
         } else {
             # For JSON files, try to parse and add
             try {
                 $config = $configContent | ConvertFrom-Json
                 if (-not $config.plugin) {
-                    $config | Add-Member -NotePropertyName "plugin" -NotePropertyValue @("@te-river/opencode-gov-mode@latest")
+                    $config | Add-Member -NotePropertyName "plugin" -NotePropertyValue @($Pinned)
                 } else {
-                    $config.plugin += "@te-river/opencode-gov-mode@latest"
+                    $config.plugin += $Pinned
                 }
                 $configContent = $config | ConvertTo-Json -Depth 10
             } catch {
                 Write-Host "⚠️  Could not parse JSON. Please manually add the following:" -ForegroundColor Yellow
-                Write-Host '  "plugin": ["@te-river/opencode-gov-mode@latest"]'
+                Write-Host "  `"plugin`": [`"$Pinned`"]"
             }
         }
         
@@ -126,6 +142,7 @@ if (-not $configFile) {
 
 Write-Host ""
 Write-Host "🏛️  Installation complete!" -ForegroundColor Green
+Write-Host "    Pinned version: $Pinned" -ForegroundColor Green
 Write-Host ""
 Write-Host "Usage:" -ForegroundColor Blue
 Write-Host "  1. Restart OpenCode Desktop"

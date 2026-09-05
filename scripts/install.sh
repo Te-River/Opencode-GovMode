@@ -18,8 +18,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Package name
-PACKAGE="@te-river/opencode-gov-mode@latest"
+PACKAGE="@te-river/opencode-gov-mode"
 
 echo -e "${BLUE}🏛️  Opencode Gov Mode Installer${NC}"
 echo -e "${BLUE}================================${NC}"
@@ -41,10 +40,23 @@ fi
 
 echo -e "${GREEN}✓ Node.js $(node -v) detected${NC}"
 
-# Install the package globally
+# Query actual version from npm registry
 echo ""
-echo -e "${YELLOW}📦 Installing ${PACKAGE}...${NC}"
-npm install -g "$PACKAGE"
+echo -e "${YELLOW}🔍 Querying latest version from npm...${NC}"
+ACTUAL_VERSION=$(npm view "$PACKAGE" version 2>/dev/null)
+
+if [ -z "$ACTUAL_VERSION" ]; then
+    echo -e "${RED}❌ Failed to query version from npm registry${NC}"
+    exit 1
+fi
+
+PINNED="${PACKAGE}@${ACTUAL_VERSION}"
+echo -e "${GREEN}✓ Latest version: ${ACTUAL_VERSION}${NC}"
+
+# Install the package globally with pinned version
+echo ""
+echo -e "${YELLOW}📦 Installing ${PINNED}...${NC}"
+npm install -g "$PINNED"
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Failed to install package${NC}"
@@ -68,11 +80,11 @@ fi
 # Create config if it doesn't exist
 if [ -z "$CONFIG_FILE" ]; then
     echo -e "${YELLOW}📝 Creating opencode.jsonc in current directory...${NC}"
-    cat > opencode.jsonc << 'EOF'
+    cat > opencode.jsonc << EOF
 {
-  "$schema": "https://opencode.ai/config.json",
+  "\$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@te-river/opencode-gov-mode@latest"
+    "${PINNED}"
   ]
 }
 EOF
@@ -83,24 +95,25 @@ else
     
     # Check if plugin is already configured
     if grep -q "@te-river/opencode-gov-mode" "$CONFIG_FILE" 2>/dev/null; then
-        echo -e "${GREEN}✓ Plugin already configured in ${CONFIG_FILE}${NC}"
+        echo -e "${YELLOW}📝 Updating plugin version to ${ACTUAL_VERSION}...${NC}"
+        # Replace existing version with actual version
+        sed -i.bak "s|@te-river/opencode-gov-mode@[^\"']*|${PINNED}|g" "$CONFIG_FILE"
+        echo -e "${GREEN}✓ Plugin version updated${NC}"
     else
         echo -e "${YELLOW}📝 Adding plugin to ${CONFIG_FILE}...${NC}"
         
         # Backup original config
         cp "$CONFIG_FILE" "${CONFIG_FILE}.backup"
         
-        # Add plugin to config (simple approach - may need manual adjustment for complex configs)
+        # Add plugin to config
         if [[ "$CONFIG_FILE" == *.jsonc ]]; then
-            # For JSONC files, try to insert before the closing brace
-            sed -i.bak 's/}$/, "plugin": ["@te-river/opencode-gov-mode@latest"]\n}/' "$CONFIG_FILE"
+            sed -i.bak "s|}|, \"plugin\": [\"${PINNED}\"]\n}|" "$CONFIG_FILE"
         else
-            # For JSON files, use jq if available, otherwise suggest manual edit
             if command -v jq &> /dev/null; then
-                jq '.plugin += ["@te-river/opencode-gov-mode@latest"]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+                jq --arg p "$PINNED" '.plugin += [$p]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
             else
                 echo -e "${YELLOW}⚠️  Please manually add the following to your ${CONFIG_FILE}:${NC}"
-                echo -e '  "plugin": ["@te-river/opencode-gov-mode@latest"]'
+                echo -e "  \"plugin\": [\"${PINNED}\"]"
             fi
         fi
         
@@ -110,6 +123,7 @@ fi
 
 echo ""
 echo -e "${GREEN}🏛️  Installation complete!${NC}"
+echo -e "${GREEN}    Pinned version: ${PINNED}${NC}"
 echo ""
 echo -e "${BLUE}Usage:${NC}"
 echo -e "  1. Restart OpenCode Desktop"
