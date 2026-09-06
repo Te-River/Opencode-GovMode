@@ -70,7 +70,7 @@ const plugin: OpenCodePlugin = {
           if (cfg.agent[name]) continue
           cfg.agent[name] = {
             ...def,
-            prompt: name === "monarch" ? (def.prompt ?? "") + note : def.prompt,
+            prompt: name === "gov" ? (def.prompt ?? "") + note : def.prompt,
           }
         }
 
@@ -83,7 +83,7 @@ const plugin: OpenCodePlugin = {
         // ---------- make Emperor the default agent (opt-out: defaultAgent:false)
         const promote = options?.defaultAgent !== false
         if (promote && (!cfg.default_agent || cfg.default_agent === "build")) {
-          cfg.default_agent = "monarch"
+          cfg.default_agent = "gov"
         }
 
         // ---------- configure subagent depth for hierarchical delegation ----------

@@ -48,7 +48,7 @@ describe("config() hook", () => {
   it("injects all government agents into an empty config", async () => {
     const cfg = await getConfig()
     // Core agents
-    assert.ok(cfg.agent?.["monarch"], "should inject monarch")
+    assert.ok(cfg.agent?.["gov"], "should inject gov")
     assert.ok(cfg.agent?.["prime-minister"], "should inject prime-minister")
     // Ministries
     assert.ok(cfg.agent?.["ministry-personnel"], "should inject ministry-personnel")
@@ -71,9 +71,9 @@ describe("config() hook", () => {
   it("does not clobber user-defined agents", async () => {
     const cfg: OpenCodeConfig = {
       agent: {
-        monarch: {
+        gov: {
           mode: "primary",
-          description: "User-defined monarch override",
+          description: "User-defined gov override",
           prompt: "custom prompt",
         },
       },
@@ -81,21 +81,21 @@ describe("config() hook", () => {
     const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
     // User's definition should be preserved
-    assert.equal(cfg.agent?.["monarch"]?.description, "User-defined monarch override")
+    assert.equal(cfg.agent?.["gov"]?.description, "User-defined gov override")
   })
 
-  it("promotes monarch to default_agent when no default is set", async () => {
+  it("promotes gov to default_agent when no default is set", async () => {
     const cfg: OpenCodeConfig = {}
     const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
-    assert.equal(cfg.default_agent, "monarch")
+    assert.equal(cfg.default_agent, "gov")
   })
 
-  it("promotes monarch when default_agent is 'build'", async () => {
+  it("promotes gov when default_agent is 'build'", async () => {
     const cfg: OpenCodeConfig = { default_agent: "build" }
     const ctx = await plugin.server(createTestInput())
     ctx.config?.(cfg)
-    assert.equal(cfg.default_agent, "monarch")
+    assert.equal(cfg.default_agent, "gov")
   })
 
   it("does not override a non-build user default_agent", async () => {
@@ -105,21 +105,21 @@ describe("config() hook", () => {
     assert.equal(cfg.default_agent, "custom-agent")
   })
 
-  it("does not promote monarch when defaultAgent option is false", async () => {
+  it("does not promote gov when defaultAgent option is false", async () => {
     const cfg: OpenCodeConfig = {}
     const ctx = await plugin.server(createTestInput(), { defaultAgent: false })
     ctx.config?.(cfg)
     assert.equal(cfg.default_agent, undefined)
   })
 
-  it("monarch prompt includes blackboard note", async () => {
+  it("gov prompt includes blackboard note", async () => {
     const cfg = await getConfig()
-    const prompt = cfg.agent?.["monarch"]?.prompt ?? ""
+    const prompt = cfg.agent?.["gov"]?.prompt ?? ""
     assert.ok(prompt.includes("Gov Blackboard"), "should mention blackboard")
     assert.ok(prompt.includes("Root directory:"), "should include resolved root")
   })
 
-  it("prime-minister prompt does NOT get blackboard note (only monarch does)", async () => {
+  it("prime-minister prompt does NOT get blackboard note (only gov does)", async () => {
     const cfg = await getConfig()
     const prompt = cfg.agent?.["prime-minister"]?.prompt ?? ""
     assert.ok(!prompt.includes("Gov Blackboard"), "prime-minister should not have blackboard note")

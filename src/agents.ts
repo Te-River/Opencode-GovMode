@@ -37,7 +37,7 @@ const BLACKBOARD_GUARANTEE = `
 /* ------------------------------------------------------------------ */
 /*  Monarch — Emperor (最高决策者)                                     */
 /* ------------------------------------------------------------------ */
-const monarch: AgentConfig = {
+const gov: AgentConfig = {
   mode: "primary",
   description:
     "Emperor (君主) — supreme decision maker. Decomposes tasks, dispatches " +
@@ -858,7 +858,7 @@ for (const a of [primeMinister, ministryPersonnel, ministryFinance,
 /*  Export all agents keyed by name                                   */
 /* ------------------------------------------------------------------ */
 export const agents: Record<string, AgentConfig> = {
-  "monarch": monarch,
+  "gov": gov,
   "prime-minister": primeMinister,
   "ministry-personnel": ministryPersonnel,
   "ministry-finance": ministryFinance,

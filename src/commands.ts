@@ -13,7 +13,7 @@ import type { CommandConfig } from "./types.js"
 const govReign: CommandConfig = {
   description:
     "Emperor begins reign — full hierarchical workflow for complex tasks.",
-  agent: "monarch",
+  agent: "gov",
   template: `Execute the full imperial government workflow for the following task.
 
 ## Task
@@ -53,7 +53,7 @@ $ARGUMENTS
 const govDecree: CommandConfig = {
   description:
     "Issue an imperial decree — create a task assignment for any agent level.",
-  agent: "monarch",
+  agent: "gov",
   template: `Issue an imperial decree for the following task.
 
 ## Task
@@ -84,7 +84,7 @@ $ARGUMENTS
 const govReport: CommandConfig = {
   description:
     "Submit a memorial (report) — view progress and status of all tasks.",
-  agent: "monarch",
+  agent: "gov",
   template: `Generate a comprehensive status report for the current session.
 
 ## Request
@@ -107,7 +107,7 @@ $ARGUMENTS
 const govEndorse: CommandConfig = {
   description:
     "Imperial endorsement — approve, reject, or modify findings.",
-  agent: "monarch",
+  agent: "gov",
   template: `Review and endorse the following finding or recommendation.
 
 ## Finding
@@ -138,7 +138,7 @@ $ARGUMENTS
 const govMinistry: CommandConfig = {
   description:
     "Dispatch task to a specific Ministry (六部).",
-  agent: "monarch",
+  agent: "gov",
   template: `Dispatch the following task to the appropriate Ministry.
 
 ## Task
@@ -163,7 +163,7 @@ $ARGUMENTS
 const govGovernor: CommandConfig = {
   description:
     "Dispatch task to a Regional Governor (地方官).",
-  agent: "monarch",
+  agent: "gov",
   template: `Dispatch the following task to a Regional Governor.
 
 ## Task
@@ -186,7 +186,7 @@ $ARGUMENTS
 const govOfficial: CommandConfig = {
   description:
     "Dispatch task to a Local Official (基层官员).",
-  agent: "monarch",
+  agent: "gov",
   template: `Dispatch the following task to a Local Official.
 
 ## Task
