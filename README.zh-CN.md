@@ -18,63 +18,32 @@
 
 ## 安装
 
-### npm（推荐）
+### 一键安装脚本
 
+macOS / Linux（bash）：
 ```bash
-npm install -g @te-river/opencode-gov-mode@latest
-```
-
-### macOS / Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
-```
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
-```
-
-### 镜像站（中国大陆）
-
-如果访问 GitHub 有问题，可以尝试这些镜像：
-
-```bash
-# macOS / Linux — ghproxy.net
 curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
-
-# macOS / Linux — gh-proxy.com
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
 ```
 
+Windows（PowerShell）：
 ```powershell
-# Windows (PowerShell) — ghproxy.net
 irm https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
-
-# Windows (PowerShell) — gh-proxy.com
-irm https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
 ```
 
-### 手动安装
+### 手动配置
 
-1. 克隆仓库：
-   ```bash
-   git clone https://github.com/Te-River/Opencode-GovMode.git
-   ```
-2. 安装依赖：
-   ```bash
-   cd Opencode-GovMode
-   npm install
-   ```
-3. 构建插件：
-   ```bash
-   npm run build
-   ```
-4. 链接插件用于本地开发：
-   ```bash
-   npm link
-   ```
+在你的 `opencode.jsonc` 中添加插件：
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "@te-river/opencode-gov-mode@latest"
+  ]
+}
+```
+
+OpenCode 启动时会自动安装插件。
 
 ## 快速开始
 

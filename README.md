@@ -18,63 +18,32 @@ A hierarchical multi-agent plugin for [OpenCode Desktop](https://opencode.ai) th
 
 ## Installation
 
-### npm (Recommended)
+### One-line installer
 
+macOS / Linux (bash):
 ```bash
-npm install -g @te-river/opencode-gov-mode@latest
-```
-
-### macOS / Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
-```
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
-```
-
-### Mirror Sites (China)
-
-If you have trouble accessing GitHub, try these mirrors:
-
-```bash
-# macOS / Linux — ghproxy.net
 curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
-
-# macOS / Linux — gh-proxy.com
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.sh | bash
 ```
 
+Windows (PowerShell):
 ```powershell
-# Windows — ghproxy.net
 irm https://ghproxy.net/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
-
-# Windows — gh-proxy.com
-irm https://gh-proxy.com/https://raw.githubusercontent.com/Te-River/Opencode-GovMode/main/scripts/install.ps1 | iex
 ```
 
-### Manual
+### Manual config
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Te-River/Opencode-GovMode.git
-   ```
-2. Install dependencies:
-   ```bash
-   cd Opencode-GovMode
-   npm install
-   ```
-3. Build the plugin:
-   ```bash
-   npm run build
-   ```
-4. Link the plugin for local development:
-   ```bash
-   npm link
-   ```
+Add the plugin to your `opencode.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "@te-river/opencode-gov-mode@latest"
+  ]
+}
+```
+
+OpenCode will automatically install the plugin on startup.
 
 ## Quick Start
 
